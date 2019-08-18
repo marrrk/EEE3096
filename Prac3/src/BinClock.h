@@ -12,6 +12,7 @@ int hexCompensation(int units);
 int decCompensation(int units);
 int *toBinaryHr(int dec);
 int *toBinaryMin(int dec);
+void CleanUp(int sig);
 void initGPIO(void);
 void secPWM(int units);
 void hourInc(void);
