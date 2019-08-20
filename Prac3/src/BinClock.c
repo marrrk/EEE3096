@@ -3,7 +3,7 @@
  * Jarrod Olivier
  * Modified for EEE3095S/3096S by Keegan Crankshaw
  * August 2019
- *
+
  * MKGPUL005 NJRMAR003
  * Date 13/08/2019
 */
@@ -95,10 +95,10 @@ int main(void){
 
 	//Set random time (3:04PM)
 	//You can comment this file out later
-	wiringPiI2CWriteReg8(RTC, HOUR, 0x13+TIMEZONE);
-	wiringPiI2CWriteReg8(RTC, MIN, 0x50);
-	wiringPiI2CWriteReg8(RTC, SEC, 0b10000000);
-	
+//	wiringPiI2CWriteReg8(RTC, HOUR, 0x13+TIMEZONE);
+//	wiringPiI2CWriteReg8(RTC, MIN, 0x04);
+//	wiringPiI2CWriteReg8(RTC, SEC, 0b10000000);
+	toggleTime();
 	// Repeat this until we shut down
 	for (;;){
 		
@@ -224,7 +224,7 @@ void secPWM(int units){
 		levels[i] = value;
 		value = value +step;
 	}
-	softPwmWrite(5,levels[units]);
+	softPwmWrite(5,levels[hexCompensation(units)]);
 }
 
 /*
