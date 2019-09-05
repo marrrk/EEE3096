@@ -17,7 +17,7 @@
  */
 
 #include "Prac4.h"
-
+#include "signal.h"
 using namespace std;
 
 bool playing = true; // should be set false when paused
@@ -40,13 +40,11 @@ void play_pause_isr(void){
 		if (playing) {
 			printf("Pausing Music\n");
 			playing = false;
-		//not finished - TODO
 		}
 		else {
 			printf("Playing Music\n");
 				playing = true;
 
-		//not finished - TODO
 		}
 	}
 
@@ -64,7 +62,6 @@ void stop_isr(void){
 		printf("Stopping Music\n");
 		stopped = true;
 		playing = false;
-		// not finished  - TODO
 
 	}
 	
@@ -79,9 +76,9 @@ int setup_gpio(void){
     wiringPiSetup();
     //setting up the buttons
 	pinMode(PLAY_BUTTON,INPUT);
-	pullUpDnControl(2,PUD_UP);
+	pullUpDnControl(PLAY_BUTTON,PUD_UP);
 	pinMode(STOP_BUTTON,INPUT);
-	pullUpDnControl(2,PUD_UP);
+	pullUpDnControl(STOP_BUTTON,PUD_UP);
 
 
 	wiringPiISR(PLAY_BUTTON,INT_EDGE_BOTH,play_pause_isr);
@@ -107,10 +104,10 @@ void *playThread(void *threadargs){
     //You need to only be playing if the stopped flag is false
     while(!stopped){
         //Code to suspend playing if paused
-		//TODO
+	while(playing) {
         
         //Write the buffer out to SPI
-        //TODO
+        wiringPiSPIDataRW(SPI_CHAN,buffer[bufferReading][buffer_location],2);
 		
         //Do some maths to check if you need to toggle buffers
         buffer_location++;
@@ -118,6 +115,7 @@ void *playThread(void *threadargs){
             buffer_location = 0;
             bufferReading = !bufferReading; // switches column one it finishes one column
         }
+    }
     }
     
     pthread_exit(NULL);
@@ -181,7 +179,7 @@ int main(){
             continue;
         }
         //Set config bits for first 8 bit packet and OR with upper bits
-        buffer[bufferWriting][counter][0] = (0b01110000|ch>>6);
+        buffer[bufferWriting][counter][0] =  (0b01110000|ch>>6);
         //Set next 8 bit packet
         buffer[bufferWriting][counter][1] = ch<<2;
 
