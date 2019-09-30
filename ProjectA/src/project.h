@@ -24,7 +24,7 @@
 //SPI SETTINGS
 #define ADC_CHAN 0
 #define DAC_CHAN 1
-#define SPI_SPEEED 1
+#define SPI_SPEEED 400000
 
 
 //Function Definitions

@@ -1,5 +1,5 @@
 .RECIPEPREFIX +=
-CC = gcc
+CC = g++
 CFLAGS = -Wall -lm -lrt -lwiringPi -lpthread
 
 PROG = bin/*
@@ -7,7 +7,7 @@ OBJS = obj/*
 
 default:
     mkdir -p bin obj
-    $(CC) $(CFLAGS) -c src/project.c -o obj/project
+    $(CC) $(CFLAGS) -c src/project.cpp -o obj/project
     $(CC) $(CFLAGS) obj/project -o bin/project
 
 run:

@@ -10,6 +10,7 @@
 long lastInterruptTime = 0;
 
 
+
 //initialising GPIO
 int  initGPIO(void){
 	//Setup WiringPi
@@ -25,7 +26,7 @@ int  initGPIO(void){
 	pullUpDnControl(CHANGE_INTERVAL,PUD_UP);
 
 
-	//Setting up Interrupts for each button
+	//Setting up Interrupts for each button/
 //	wiringPiISR(RESET,INT_EDGE_BOTH,reset);
 //	wiringPiISR(CHANGE_INTERVAL,INT_EDGE_BOTH,changeInterval);
 
@@ -50,7 +51,7 @@ void ReadADC(void) {
 
 //main function
 int main(void) {
-	printf("test");
+	printf("test\n");
 }
 
 
