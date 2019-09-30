@@ -16,10 +16,11 @@
 #include <signal.h>
 
 //Define Buttons
-#define STOP_ALARM
-#define TOGGLE_MONITORING
+#define STOP_ALARM 28
+#define TOGGLE_MONITORING 29
 #define CHANGE_INTERVAL 1
 #define RESET 4
+
 
 //SPI SETTINGS
 #define ADC_CHAN 0
@@ -30,8 +31,8 @@
 //Function Definitions
 int main(void);
 int initGPIO(void);
-int initSPI(void);
-
+int initSPI9(void);
+int initI2C(void);
 
 
 #endif
