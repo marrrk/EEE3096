@@ -10,8 +10,22 @@
 long lastInterruptTime = 0;
 bool alarmsound = false;
 bool start = false;
-int interval;
+int interval = 1000;
 int resetTime;
+double temperature;
+double light;
+double humidity;
+double output;
+uint8_t readings[3];
+
+//clean up function
+void CleanUp(int sig){
+	printf("Cleaning up :)\n");
+
+	//set output pins back to input i guess
+
+	exit(0);
+}
 
 
 void alarm_stop(void){
@@ -26,18 +40,18 @@ void alarm_stop(void){
 void changeInterval(void){
 	long interrupttime = millis();
 	if (interrupttime - lastInterruptTime > 200){
-		if (interval == 5){
+		if (interval == 5000){
 		printf("reading every 1 second\n");
-		interval = 1;
+		interval = 1000;
 		}
-		else if (interval == 1){
-		printf("reading every 3 second\n");
-		interval = 3;
+		else if (interval == 1000){
+		printf("reading every 2 second\n");
+		interval = 2000;
 		}
 
 		else {
 		printf("reading every 5 second\n");
-		interval = 5;
+		interval = 5000;
 		}
 	}
 	lastInterruptTime = interrupttime;
@@ -56,11 +70,11 @@ void start_stop_isr(void){
 	long interrupttime = millis();
 	if (interrupttime - lastInterruptTime > 200){
 		if(start == true){
-			printf("monotoring stopped");
+			printf("Stop Monitoring\n");
 			start = false;
 		}
 		else{
-			printf("starting monotoring");
+			printf("Start Monitoring\n");
 			start = true;
 		}
 	}
@@ -73,8 +87,8 @@ void start_stop_isr(void){
 int  initGPIO(void){
 	//Setup WiringPi
 	wiringPiSetup();
+	mcp3004Setup(PIN,ADC_CHAN);
 
-	
 
 	//Setting up Buttons
 	pinMode(RESET,INPUT);
@@ -94,8 +108,10 @@ int  initGPIO(void){
 	wiringPiISR(CHANGE_INTERVAL,INT_EDGE_BOTH,changeInterval);
 	wiringPiISR(STOP_ALARM,INT_EDGE_BOTH,alarm_stop);
 	wiringPiISR(TOGGLE_MONITORING,INT_EDGE_BOTH,start_stop_isr);
+
 	//Setting up Communications
-//	wiringPiSPISetup(ADC_CHAN,SPI_SPEED);
+	//wiringPiSPISetup(ADC_CHAN,SPI_SPEED);
+
 	//TODO - DAC setup
 
 
@@ -106,15 +122,41 @@ int  initGPIO(void){
 
 //read from ADC
 void ReadADC(void) {
-	
+	humidity = analogRead(PIN);
+	light = analogRead(PIN+1);
+	temperature = analogRead(PIN+2);
+
+	humidity = humidity*(3.3/1024);
+//	light = light*(3.3/1024);
+	temperature = temperature*(3.3/1024);
+	temperature = temperature/0.01;
 
 
+	output = (light/1023)*humidity;
 }
 
 
 //main function
 int main(void) {
 	printf("test\n");
+	initGPIO();
+	for (;;) {
+	ReadADC();
+	printf("the humidity is %.2f\n",humidity);
+	printf("light reading: %.0f\n",light);
+	printf("temp reading: %.1f\n",temperature);
+	printf("DAC Output: %.2f\n",output);
+
+	if ((output<0.65)| (output>2.65)) {
+		alarmsound = true;
+		printf("sounding alarm\n");
+
+	}
+	delay(interval);
+	}
+
+
+	return 0;
 }
 
 
