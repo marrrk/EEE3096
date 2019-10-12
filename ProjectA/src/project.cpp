@@ -10,24 +10,26 @@
 //Global Variables
 long lastInterruptTime = 0;
 bool alarmsound = false;
-bool start = false;
+bool start = true;
 int interval = 1000;
-int timer;
+int alarmSecs;
 int hours,mins,secs;
 int sysHrs,sysMins,sysSecs;
+int startSecs, startMins, startHrs;
 int sysInterval = 1;
+int currentSecs;
 double temperature;
 double light;
 double humidity;
 double output;
-//uint8_t readings[3];
+int startTime,secsDifference;
 
 //clean up function
 void CleanUp(int sig){
 	printf("Cleaning up :)\n");
-
-	//set output pins back to input i guess
-
+	digitalWrite(BUZZER,LOW);
+	//set output pins back to input
+	pinMode(BUZZER,INPUT);
 	exit(0);
 }
 
@@ -37,6 +39,7 @@ void alarm_stop(void){
 	if (interrupttime - lastInterruptTime > 200){
 		printf("Stopping Alarm\n");
 		alarmsound = false;
+		digitalWrite(BUZZER,LOW);
 		}
 	lastInterruptTime = interrupttime;
 }
@@ -72,9 +75,7 @@ void reset(void){
 	long interrupttime = millis();
 	if (interrupttime - lastInterruptTime > 200){
 		printf("resetting\n");
-		sysHrs = 0;
-		sysMins = 0;
-		sysSecs = 0;
+		startTime = toSeconds(getSecs()+1,getMins(),getHours());
 		}
 	lastInterruptTime = interrupttime;
 }
@@ -103,6 +104,9 @@ int  initGPIO(void){
 	wiringPiSetup();
 	mcp3004Setup(PIN,ADC_CHAN);
 
+	//setting up the buzzer
+	pinMode(BUZZER,OUTPUT);
+
 
 	//Setting up Buttons
 	pinMode(RESET,INPUT);
@@ -123,8 +127,6 @@ int  initGPIO(void){
 	wiringPiISR(STOP_ALARM,INT_EDGE_FALLING,alarm_stop);
 	wiringPiISR(TOGGLE_MONITORING,INT_EDGE_FALLING,start_stop_isr);
 
-	//Setting up Communications
-//	RTC = wiringPiI2CSetup(RTCAddr);
 
 
 
@@ -138,16 +140,16 @@ void ReadADC(void) {
 	light = analogRead(PIN+1);
 	temperature = analogRead(PIN+2);
 
-	humidity = humidity*(3.3/1024);
-//	light = light*(3.3/1024);
-	temperature = temperature*(3.3/1024);
-	temperature = temperature/0.01;
+	humidity = humidity*(3.3/1023);
+	temperature = temperature*(3.3/1023);
+	temperature = ((temperature)/0.01);
 
 
 	output = (light/1023)*humidity;
 
 	if ((output<0.65) | (output>2.65)) {
 		alarmsound = true;
+		alarmSecs = toSeconds(getSecs(),getMins(),getHours());
 
 	}
 }
@@ -170,29 +172,58 @@ void incrementTimer(void) {
 
 }
 
+int toSeconds(int ss, int mm, int hh) {
+	int total = (hh*60*60) + (mm*60) + ss;
+	return total;
+
+}
+
+
+void getTime(void){
+	hours = getHours();
+	mins = getMins();
+	secs = getSecs();
+
+	currentSecs = toSeconds(secs,mins,hours);
+
+	secsDifference = currentSecs - startTime;
+
+	to24Hr();
+}
+
+void to24Hr(void){
+	sysHrs = secsDifference / (3600);
+	sysMins = (secsDifference % 3600)/60;
+	sysSecs = (secsDifference % 3600) % 60;
+
+}
+
+
 //main function
 int main(void) {
 	signal(SIGINT,CleanUp);
-	printf("test\n");
 	initGPIO();
+
+	getTime();
+
+//	printf("the time is: %02d:%02d:%02d\n",startHrs,startMins,startSecs);
+	startTime = toSeconds(getSecs(),getMins(),getHours());
+//	printf("start time in seconds: %d\n",startTime);
 	for (;;) {
 		if (start) {
 			ReadADC();
-			printf("the humidity is %.2f V\n",humidity);
-			printf("light reading: %.0f\n",light);
-			printf("temp reading: %.1f C\n",temperature);
-			printf("DAC Output: %.2f V\n",output);
 			if (alarmsound) {
-				printf("alarm is sounding\n");
-
+				if (alarmSecs - currentSecs > 180) {
+					printf("Sounding Alarm\n");
+					digitalWrite(BUZZER,HIGH);
+				}
 			}
 		}
-		hours = getHours();
-		mins = getMins();
-		secs = getSecs();
-		printf("RTC is %d:%d:%d | System Time: %d:%d:%d \n",hours,mins,secs, sysHrs,sysMins,sysSecs);
+		getTime();
+		printf("RTC Time %02d:%02d:%02d | System Time: %02d:%02d:%02d | Humidity: %.2f V | Light: %.0f | Temperature: %.1f C | DAC Output: %.2f V\n",hours,mins,secs, sysHrs,sysMins,sysSecs,humidity,light,temperature,output);
+	//	printf("difference in seconds: %d\n",secsDifference);
 		delay(interval);
-		incrementTimer();
+		//incrementTimer();
 	}
 
 
