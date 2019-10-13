@@ -41,6 +41,7 @@ void alarm_stop(void){
 		printf("Stopping Alarm\n");
 		alarmsound = false;
 		digitalWrite(BUZZER,LOW);
+		interval = 1000;
 		}
 	lastInterruptTime = interrupttime;
 }
@@ -75,6 +76,7 @@ void changeInterval(void){
 void reset(void){
 	long interrupttime = millis();
 	if (interrupttime - lastInterruptTime > 200){
+		system("clear");
 		printf("resetting\n");
 		startTime = toSeconds(getSecs()+1,getMins(),getHours());
 		}
@@ -137,17 +139,19 @@ int  initGPIO(void){
 
 //read from ADC
 void ReadADC(void) {
+	// reads values from the ADC
 	humidity = analogRead(PIN);
 	light = analogRead(PIN+1);
 	temperature = analogRead(PIN+2);
 
+	//formats the values into desired thing
 	humidity = humidity*(3.3/1023);
 	temperature = temperature*(3.3/1023);
 	temperature = ((temperature-0.05)/0.01);
 
 
 	output = (light/1023)*humidity;
-
+	//checks threshold for the alarm
 	if ((output<0.65) || (output>2.65)) {
 		alarmsound = true;
 		alarmSecs = toSeconds(getSecs(),getMins(),getHours());
@@ -173,14 +177,14 @@ void incrementTimer(void) {
 
 }
 
-int toSeconds(int ss, int mm, int hh) {
+int toSeconds(int ss, int mm, int hh) { //convert time to seconds
 	int total = (hh*60*60) + (mm*60) + ss;
 	return total;
 
 }
 
 
-void getTime(void){
+void getTime(void){  //gets current time, converts it to seconds to updates system time
 	hours = getHours();
 	mins = getMins();
 	secs = getSecs();
@@ -192,6 +196,7 @@ void getTime(void){
 	to24Hr();
 }
 
+//converts time in seconds to 24Hr format
 void to24Hr(void){
 	sysHrs = secsDifference / (3600);
 	sysMins = (secsDifference % 3600)/60;
@@ -202,30 +207,32 @@ void to24Hr(void){
 
 //main function
 int main(void) {
+	system("clear");
 	signal(SIGINT,CleanUp);
 	initGPIO();
 
+	//the start of the system timer
 	getTime();
 
 //	printf("the time is: %02d:%02d:%02d\n",startHrs,startMins,startSecs);
 	startTime = toSeconds(getSecs(),getMins(),getHours());
 //	printf("start time in seconds: %d\n",startTime);
-	for (;;) {
-		if (start) {
+	for (;;) {	//infinite loop
+		if (start) { //only logs when in start is true
 			ReadADC();
-			if (alarmsound) {
-				if (alarmSecs - lastAlarmSecs >= 180) {
+			if (alarmsound) { 
+				if (alarmSecs - lastAlarmSecs >= 180) {  //sounds alarm if previous time was more than 3 minutes ago
 					printf("Sounding Alarm\n");
 					digitalWrite(BUZZER,HIGH);
 					lastAlarmSecs = alarmSecs;
 				}
 			}
 		}
+		//gets system time
 		getTime();
 		printf("RTC Time %02d:%02d:%02d | System Time: %02d:%02d:%02d | Humidity: %.2f V | Light: %.0f | Temperature: %.1f C | DAC Output: %.2f V\n",hours,mins,secs, sysHrs,sysMins,sysSecs,humidity,light,temperature,output);
 	//	printf("difference in seconds: %d\n",secsDifference);
 		delay(interval);
-		//incrementTimer();
 	}
 
 
