@@ -13,6 +13,7 @@ bool alarmsound = false;
 bool start = true;
 int interval = 1000;
 int alarmSecs;
+int lastAlarmSecs = -180;
 int hours,mins,secs;
 int sysHrs,sysMins,sysSecs;
 int startSecs, startMins, startHrs;
@@ -26,7 +27,7 @@ int startTime,secsDifference;
 
 //clean up function
 void CleanUp(int sig){
-	printf("Cleaning up :)\n");
+	printf("\n \nCleaning up :)\n");
 	digitalWrite(BUZZER,LOW);
 	//set output pins back to input
 	pinMode(BUZZER,INPUT);
@@ -142,12 +143,12 @@ void ReadADC(void) {
 
 	humidity = humidity*(3.3/1023);
 	temperature = temperature*(3.3/1023);
-	temperature = ((temperature)/0.01);
+	temperature = ((temperature-0.05)/0.01);
 
 
 	output = (light/1023)*humidity;
 
-	if ((output<0.65) | (output>2.65)) {
+	if ((output<0.65) || (output>2.65)) {
 		alarmsound = true;
 		alarmSecs = toSeconds(getSecs(),getMins(),getHours());
 
@@ -213,9 +214,10 @@ int main(void) {
 		if (start) {
 			ReadADC();
 			if (alarmsound) {
-				if (alarmSecs - currentSecs > 180) {
+				if (alarmSecs - lastAlarmSecs >= 180) {
 					printf("Sounding Alarm\n");
 					digitalWrite(BUZZER,HIGH);
+					lastAlarmSecs = alarmSecs;
 				}
 			}
 		}
